@@ -2,6 +2,7 @@
 # Can find the player names, sentiments, emotions, and text data for each player in the data.
 
 import json
+import numpy as np
 import matplotlib.pyplot as plt
 
 from mappings import name_mappings
@@ -56,7 +57,33 @@ for entry_id, entry_data in data.items():
             player_emotions[common_name] = player_emotions.get(common_name, []) + [player["emotion"]]
             player_text[common_name] = player_text.get(common_name, []) + [entry_data["text"]]
 
-# print(team_tweets["CSK"])
+# Define the sentiments and emotions
+sentiments = np.arange(-5, 6)
+emotions = [
+    "happiness",
+    "sadness",
+    "joy",
+    "hope",
+    "anger",
+    "neutral",
+    "spam",
+    "love",
+]
+
+# Dictionary to store sentiments and emotions for each team
+team_sentiments = {team: [] for team in ipl_teams}
+team_emotions = {team: {emotion: 0 for emotion in emotions} for team in ipl_teams}
+
+# Iterate through team tweets and accumulate sentiments and emotions
+for team, tweets in team_tweets.items():
+    for tweet_data in tweets:
+        tweet_text = tweet_data[1]
+        sentiments = tweet_data[0].get("sentiment", 0)
+        if sentiments in range(-5, 6):
+            team_sentiments[team].append(sentiments)
+        emotion = tweet_data[0].get("emotion", "")
+        if emotion in emotions:
+            team_emotions[team][emotion] += 1
 
 def all_emotion():
     # Extract emotions and count their occurrences
@@ -108,5 +135,37 @@ def player_vs_sentiment():
     plt.tight_layout()
     plt.show()
 
-# player_vs_sentiment()
+def team_vs_emotion_sentiment():
 
+    # Calculate average sentiment score for each team
+    team_average_sentiments = {
+        team: np.mean(sentiments) for team, sentiments in team_sentiments.items()
+    }
+
+    # Average Sentiments
+    plt.bar(
+        team_average_sentiments.keys(), team_average_sentiments.values(), color="skyblue"
+    )
+    plt.title("Average Sentiment Score for IPL Teams")
+    plt.xlabel("Teams")
+    plt.ylabel("Average Sentiment Score")
+    plt.show()
+
+
+def team_vs_emotions(team):
+    # Extract emotion counts for the specified team
+    team_emotion_counts = [team_emotions[team][emotion] for emotion in emotions]
+
+    # Plotting Pie Chart for Emotions Distribution
+    plt.figure(figsize=(8, 8))
+    plt.pie(team_emotion_counts, labels=emotions, autopct="%1.1f%%", startangle=140)
+    plt.title(f"Emotions Distribution for Team {team}")
+    plt.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
+    plt.show()
+
+
+# Example usage:
+team_vs_emotions("CSK")  # Replace 'CSK' with the desired IPL team
+
+
+team_vs_emotion_sentiment()
