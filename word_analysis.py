@@ -4,6 +4,7 @@ from collections import Counter
 import matplotlib.pyplot as plt
 from analysis import player_text
 import numpy as np 
+import seaborn as sns
 
 # Load spaCy English tokenizer and stop words
 nlp = spacy.load("en_core_web_sm")
@@ -40,17 +41,40 @@ player_name = input("Enter player's name: ")
 if player_name in player_word_counts:
     # Get word count for the specified player
     word_count = player_word_counts[player_name]
-    
-    # Select top 15 words with highest frequency count
-    top_words = dict(word_count.most_common(15))
-    
+
+    # Select top 20 words with highest frequency count
+    top_words = dict(word_count.most_common(20))
+
     # Plot the bar plot for the specified player
+    plt.figure(figsize=(10, 6))
     plt.bar(top_words.keys(), top_words.values())  # Plot the bar plot
     plt.xlabel('Word')
     plt.ylabel('Count')
-    plt.title(f'Top 15 Words for {player_name}')  # Title includes player's name
-    plt.xticks(rotation=45)  # Rotate x-axis labels for readability
+    plt.title(f'Top 20 Words for {player_name}')  # Title includes player's name
+    plt.xticks(rotation=45)
     plt.tight_layout()  # Adjust layout to prevent overlap
-    plt.show()  # Show the plot
+    plt.show()    # Rotate x-axis labels for readability
+    # Show the plot
+    
+    plt.figure(figsize=(10, 6))
+    plt.scatter(range(len(top_words)), list(top_words.values()))  # Plot the scatter plot
+    plt.xlabel('Word Index')
+    plt.ylabel('Count')
+    plt.title(f'Scatter Plot of Word Frequencies for {player_name}')  # Title includes player's name
+
+    plt.tight_layout()  # Adjust layout to prevent overlap
+    plt.show() 
+    # Plot heatmap for the top 20 words
+    word_count_list = [word_count[word] for word in top_words]
+    word_count_matrix = np.array(word_count_list).reshape(1, -1)
+
+    plt.figure(figsize=(10, 6))
+    sns.heatmap(word_count_matrix, cmap="Blues", annot=True, fmt='g', xticklabels=top_words.keys(), yticklabels=False)
+    plt.title(f'Top 20 Word Frequencies for {player_name}')  # Title includes player's name
+    plt.xlabel('Words')
+    plt.ylabel('Player')
+    plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels for readability
+    plt.tight_layout()  # Adjust layout to prevent overlap
+    plt.show()  # Show the heatmap
 else:
     print("Player not found.")

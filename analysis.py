@@ -8,6 +8,9 @@ from collections import Counter
 from mappings import name_mappings
 import spacy
 import re
+import networkx as nx
+import seaborn as sns
+
 
 nlp = spacy.load("en_core_web_sm")
 
@@ -170,63 +173,38 @@ def word_count_per_team():
 
     # Get user input for team name
     team_name = input("Enter team name: ")
-
-    # Plot word frequency for the specified team
     if team_name in team_word_counts:
         # Get word count for the specified team
         word_count = team_word_counts[team_name]
 
-        # Select top 15 words with highest frequency count
-        top_words = dict(word_count.most_common(15))
+        # Select top 20 words with highest frequency count
+        top_words = dict(word_count.most_common(20))
 
         # Plot the bar plot for the specified team
+        plt.figure(figsize=(10, 6))
         plt.bar(top_words.keys(), top_words.values())  # Plot the bar plot
         plt.xlabel('Word')
         plt.ylabel('Count')
-        plt.title(f'Top 15 Words for {team_name}')  # Title includes team's name
+        plt.title(f'Top 20 Words for {team_name}')  # Title includes team's name
         plt.xticks(rotation=45)  # Rotate x-axis labels for readability
         plt.tight_layout()  # Adjust layout to prevent overlap
-        plt.show()  # Show the plot
+
+        # Create heatmap for word frequency
+        top_word_count_matrix = np.array(list(top_words.values())).reshape(1, -1)
+        plt.figure(figsize=(10, 6))
+        sns.heatmap(top_word_count_matrix, cmap="Blues", annot=True, fmt='g', xticklabels=list(top_words.keys()), yticklabels=False)
+        plt.title(f'Word Frequency Heatmap for Top 20 Words in {team_name}')
+        plt.xlabel('Words')
+        plt.ylabel('Team')
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+
+        plt.show()  # Show the plots
     else:
         print("Team not found.")
 
-
-def team_vs_emotion_sentiment():
-
-    # Calculate average sentiment score for each team
-    team_average_sentiments = {
-        team: np.mean(sentiments) for team, sentiments in team_sentiments.items()
-    }
-
-    # Average Sentiments
-    plt.bar(
-        team_average_sentiments.keys(),
-        team_average_sentiments.values(),
-        color="skyblue",
-    )
-    plt.title("Average Sentiment Score for IPL Teams")
-    plt.xlabel("Teams")
-    plt.ylabel("Average Sentiment Score")
-    plt.show()
-
-
-def team_vs_emotions(team):
-    # Extract emotion counts for the specified team
-    team_emotion_counts = [team_emotions[team][emotion] for emotion in emotions]
-
-    # Plotting Pie Chart for Emotions Distribution
-    plt.figure(figsize=(8, 8))
-    plt.pie(team_emotion_counts, labels=emotions, autopct="%1.1f%%", startangle=140)
-    plt.title(f"Emotions Distribution for Team {team}")
-    plt.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
-    plt.show()
-
-
-# Example usage:
-team_vs_emotions("CSK")  # Replace 'CSK' with the desired IPL team
-
-
-team_vs_emotion_sentiment()
+    # Plot word frequency for the specified team
+     
 
 
 def team_vs_emotion_sentiment():
@@ -260,8 +238,103 @@ def team_vs_emotions(team):
     plt.show()
 
 
-# Example usage:
-team_vs_emotions("CSK")  # Replace 'CSK' with the desired IPL team
 
 
-team_vs_emotion_sentiment()
+def team_vs_emotion_sentiment():
+
+    # Calculate average sentiment score for each team
+    team_average_sentiments = {
+        team: np.mean(sentiments) for team, sentiments in team_sentiments.items()
+    }
+
+    # Average Sentiments
+    plt.bar(
+        team_average_sentiments.keys(),
+        team_average_sentiments.values(),
+        color="skyblue",
+    )
+    plt.title("Average Sentiment Score for IPL Teams")
+    plt.xlabel("Teams")
+    plt.ylabel("Average Sentiment Score")
+    plt.show()
+
+def team_network_graph():
+    # Create a directed graph
+    G = nx.DiGraph()
+
+    # Filter out None values from unique_player_names
+    valid_player_names = {name for name in unique_player_names if name}
+
+    # Iterate over each team's tweets
+    for team, tweets in team_tweets.items():
+        # Count occurrences of each player in the team's tweets
+        player_counts = Counter()
+        for tweet_data in tweets:
+            tweet_text = tweet_data[1]
+            # Extract player names from tweet text and count occurrences
+            for player in valid_player_names:
+                if player in tweet_text:
+                    player_counts[player] += 1
+        
+        # Find the top 5 players with the highest counts for this team
+        top_players = [player for player, _ in player_counts.most_common(4)]
+        
+        # Add nodes for the top 5 players for this team
+        G.add_nodes_from(top_players, type='player')
+
+        # Add edges between the team and the top 5 players
+        for player in top_players:
+            G.add_edge(player, team)
+
+    # Plot the network graph
+    plt.figure(figsize=(12, 8))
+    pos = nx.fruchterman_reingold_layout(G)
+
+    # Set node colors
+    node_colors = ['lightblue' if node in ipl_teams else 'lightgreen' for node in G.nodes()]
+
+    nx.draw(G, pos, with_labels=True, node_size=1000, font_size=12, font_weight='bold', arrowsize=20, node_color=node_colors)
+    plt.title('Network Graph Between Top Players and Teams')
+    plt.show()
+
+
+
+def player_vs_team_heatmap():
+    # Initialize dictionary to store data
+    player_counts = Counter()
+    unique_player_names = set()
+    team_name = input("Enter the team name: ")
+    # Extract player names and count occurrences for the specified team
+    for entry_id, entry_data in data.items():
+        if entry_data is None:
+            continue
+        tweet_text = entry_data.get("text", "")
+        if team_name in tweet_text:
+            if "players" in entry_data:
+                players = entry_data["players"]
+                for player in players:
+                    if "player_name" in player:
+                        common_name = map_name(player["player_name"])
+                        unique_player_names.add(common_name)
+                        player_counts[common_name] += 1
+
+    # Select top 20 players with the highest counts
+    top_players = [player for player, count in player_counts.most_common(20)]
+    top_player_counts = [player_counts[player] for player in top_players]
+    player_counts_matrix = np.array(top_player_counts).reshape(1, -1)
+    
+    # Plot heatmap
+    plt.figure(figsize=(10, 6))
+    sns.heatmap(player_counts_matrix, cmap="Blues", annot=True, fmt='g', xticklabels=top_players, yticklabels=False)
+    plt.title(f'Top 20 Player-Team Relationships Heatmap for {team_name}')
+    plt.xlabel('Players')
+    plt.ylabel('Team')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    plt.show()
+
+# Ask user to input a team name
+
+
+# Generate heatmap for the specified team
+word_count_per_team()
