@@ -4,8 +4,12 @@
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-
+from collections import Counter
 from mappings import name_mappings
+import spacy
+import re
+
+nlp = spacy.load("en_core_web_sm")
 
 
 ipl_teams = ["CSK", "DC", "GT", "KKR", "KXIP", "LSG", "MI", "PBKS", "RCB", "RR"]
@@ -135,6 +139,56 @@ def player_vs_sentiment():
     plt.tight_layout()
     plt.show()
 
+#word count model
+def word_count_per_team():
+    def count_words(text):
+        # Remove all non-alphanumeric characters except spaces
+        text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
+        
+        # Tokenize the text into words and filter out stopwords
+        doc = nlp(text)
+        words = [token.text.lower() for token in doc if not token.is_stop and token.text.isalnum()]
+        
+        # Count the occurrences of each word
+        word_counts = Counter(words)
+        
+        return word_counts
+
+    team_word_counts = {team: Counter() for team in ipl_teams}
+
+    # Iterate over each team and their associated tweets
+    for team, tweets in team_tweets.items():
+        # Iterate over each tweet and its text
+        for tweet_info in tweets:
+            tweet_text = tweet_info[1]  # Extract tweet text from the second index of the tweet_info list
+            
+            # Tokenize the text into words and count the occurrences of each word
+            word_count = count_words(tweet_text)
+            
+            # Update the team's word count
+            team_word_counts[team] += word_count
+
+    # Get user input for team name
+    team_name = input("Enter team name: ")
+
+    # Plot word frequency for the specified team
+    if team_name in team_word_counts:
+        # Get word count for the specified team
+        word_count = team_word_counts[team_name]
+        
+        # Select top 15 words with highest frequency count
+        top_words = dict(word_count.most_common(15))
+        
+        # Plot the bar plot for the specified team
+        plt.bar(top_words.keys(), top_words.values())  # Plot the bar plot
+        plt.xlabel('Word')
+        plt.ylabel('Count')
+        plt.title(f'Top 15 Words for {team_name}')  # Title includes team's name
+        plt.xticks(rotation=45)  # Rotate x-axis labels for readability
+        plt.tight_layout()  # Adjust layout to prevent overlap
+        plt.show()  # Show the plot
+    else:
+        print("Team not found.")
 
 
 
