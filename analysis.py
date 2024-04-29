@@ -135,6 +135,46 @@ def player_vs_sentiment():
     plt.tight_layout()
     plt.show()
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def team_vs_emotion_sentiment():
 
     # Calculate average sentiment score for each team
