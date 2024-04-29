@@ -54,4 +54,39 @@ for entry_id, entry_data in data.items():
 # print(player_sentiments)
 # print(player_emotions)
 
+# print(player_emotions)
 
+
+
+def player_vs_sentiment():
+    for player, scores in player_sentiments.items():
+        player_sentiments[player] = [int(score) for score in scores if score is not None]
+
+    # Calculate the average sentiment score for each player
+    average_sentiments = {}
+    for player, sentiments in player_sentiments.items():
+        print(player, sentiments)
+        average_sentiments[player] = sum(sentiments)/ len(sentiments)
+
+    # Sort players by their average sentiment score
+    sorted_players = sorted(average_sentiments.items(), key=lambda x: x[1], reverse=True)
+
+    # Extract player names and their corresponding average sentiment scores
+    players = [
+        player[0]
+        for player in sorted_players
+        if player[1] > 0 and len(player_sentiments[player[0]]) > 5
+    ]
+    sentiments = [player[1] for player in sorted_players if player[1] > 0 and len(player_sentiments[player[0]]) > 5]
+
+    # Plotting
+    plt.figure(figsize=(10, 6))
+    plt.bar(players, sentiments, color="skyblue")
+    plt.title("Fan Loyalty Analysis")
+    plt.xlabel("Players")
+    plt.ylabel("Average Sentiment Score")
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+    plt.show()
+    
+# player_vs_sentiment()
