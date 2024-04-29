@@ -1,147 +1,25 @@
-# Word Analysis of Player Text
-
+import spacy
+import re
 from collections import Counter
+import matplotlib.pyplot as plt
 from analysis import player_text
+import numpy as np 
 
+# Load spaCy English tokenizer and stop words
+nlp = spacy.load("en_core_web_sm")
 
-# Define a set of common stopwords
-stopwords = {
-    "i",
-    "me",
-    "my",
-    "myself",
-    "we",
-    "our",
-    "ours",
-    "ourselves",
-    "you",
-    "your",
-    "yours",
-    "yourself",
-    "yourselves",
-    "he",
-    "him",
-    "his",
-    "himself",
-    "she",
-    "her",
-    "hers",
-    "herself",
-    "it",
-    "its",
-    "itself",
-    "they",
-    "them",
-    "their",
-    "theirs",
-    "themselves",
-    "what",
-    "which",
-    "who",
-    "whom",
-    "this",
-    "that",
-    "these",
-    "those",
-    "am",
-    "is",
-    "are",
-    "was",
-    "were",
-    "be",
-    "been",
-    "being",
-    "have",
-    "has",
-    "had",
-    "having",
-    "do",
-    "does",
-    "did",
-    "doing",
-    "a",
-    "an",
-    "the",
-    "and",
-    "but",
-    "if",
-    "or",
-    "because",
-    "as",
-    "until",
-    "while",
-    "of",
-    "at",
-    "by",
-    "for",
-    "with",
-    "about",
-    "against",
-    "between",
-    "into",
-    "through",
-    "during",
-    "before",
-    "after",
-    "above",
-    "below",
-    "to",
-    "from",
-    "up",
-    "down",
-    "in",
-    "out",
-    "on",
-    "off",
-    "over",
-    "under",
-    "again",
-    "further",
-    "then",
-    "once",
-    "here",
-    "there",
-    "when",
-    "where",
-    "why",
-    "how",
-    "all",
-    "any",
-    "both",
-    "each",
-    "few",
-    "more",
-    "most",
-    "other",
-    "some",
-    "such",
-    "no",
-    "nor",
-    "not",
-    "only",
-    "own",
-    "same",
-    "so",
-    "than",
-    "too",
-    "very",
-    "s",
-    "t",
-    "can",
-    "will",
-    "just",
-    "don",
-    "should",
-    "now",
-}
-
-
-# Function to tokenize text into words and count their occurrences, removing stopwords
 def count_words(text):
-    words = text.split()  # Split the text into words
-    # Filter out stopwords
-    words = [word for word in words if word.lower() not in stopwords]
-    return Counter(words)  # Count the occurrences of each word
+    # Remove all non-alphanumeric characters except spaces
+    text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
+    
+    # Tokenize the text into words and filter out stopwords
+    doc = nlp(text)
+    words = [token.text.lower() for token in doc if not token.is_stop and token.text.isalnum()]
+    
+    # Count the occurrences of each word
+    word_counts = Counter(words)
+    
+    return word_counts
 
 
 # Dictionary to store word counts for each player
@@ -157,8 +35,22 @@ for player, texts in player_text.items():
         # Count words in the text and update player's word count
         player_word_counts[player] += count_words(text)
 
-# Example: Print word counts for each player
-for player, word_count in player_word_counts.items():
-    print(f"Word counts for {player}:")
-    print(word_count)
-    print()
+player_name = input("Enter player's name: ")
+
+if player_name in player_word_counts:
+    # Get word count for the specified player
+    word_count = player_word_counts[player_name]
+    
+    # Select top 15 words with highest frequency count
+    top_words = dict(word_count.most_common(15))
+    
+    # Plot the bar plot for the specified player
+    plt.bar(top_words.keys(), top_words.values())  # Plot the bar plot
+    plt.xlabel('Word')
+    plt.ylabel('Count')
+    plt.title(f'Top 15 Words for {player_name}')  # Title includes player's name
+    plt.xticks(rotation=45)  # Rotate x-axis labels for readability
+    plt.tight_layout()  # Adjust layout to prevent overlap
+    plt.show()  # Show the plot
+else:
+    print("Player not found.")
