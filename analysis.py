@@ -139,19 +139,19 @@ def player_vs_sentiment():
     plt.tight_layout()
     plt.show()
 
-#word count model
+# word count model
 def word_count_per_team():
     def count_words(text):
         # Remove all non-alphanumeric characters except spaces
         text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
-        
+
         # Tokenize the text into words and filter out stopwords
         doc = nlp(text)
         words = [token.text.lower() for token in doc if not token.is_stop and token.text.isalnum()]
-        
+
         # Count the occurrences of each word
         word_counts = Counter(words)
-        
+
         return word_counts
 
     team_word_counts = {team: Counter() for team in ipl_teams}
@@ -161,10 +161,10 @@ def word_count_per_team():
         # Iterate over each tweet and its text
         for tweet_info in tweets:
             tweet_text = tweet_info[1]  # Extract tweet text from the second index of the tweet_info list
-            
+
             # Tokenize the text into words and count the occurrences of each word
             word_count = count_words(tweet_text)
-            
+
             # Update the team's word count
             team_word_counts[team] += word_count
 
@@ -175,10 +175,10 @@ def word_count_per_team():
     if team_name in team_word_counts:
         # Get word count for the specified team
         word_count = team_word_counts[team_name]
-        
+
         # Select top 15 words with highest frequency count
         top_words = dict(word_count.most_common(15))
-        
+
         # Plot the bar plot for the specified team
         plt.bar(top_words.keys(), top_words.values())  # Plot the bar plot
         plt.xlabel('Word')
@@ -191,42 +191,42 @@ def word_count_per_team():
         print("Team not found.")
 
 
+def team_vs_emotion_sentiment():
+
+    # Calculate average sentiment score for each team
+    team_average_sentiments = {
+        team: np.mean(sentiments) for team, sentiments in team_sentiments.items()
+    }
+
+    # Average Sentiments
+    plt.bar(
+        team_average_sentiments.keys(),
+        team_average_sentiments.values(),
+        color="skyblue",
+    )
+    plt.title("Average Sentiment Score for IPL Teams")
+    plt.xlabel("Teams")
+    plt.ylabel("Average Sentiment Score")
+    plt.show()
 
 
+def team_vs_emotions(team):
+    # Extract emotion counts for the specified team
+    team_emotion_counts = [team_emotions[team][emotion] for emotion in emotions]
+
+    # Plotting Pie Chart for Emotions Distribution
+    plt.figure(figsize=(8, 8))
+    plt.pie(team_emotion_counts, labels=emotions, autopct="%1.1f%%", startangle=140)
+    plt.title(f"Emotions Distribution for Team {team}")
+    plt.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
+    plt.show()
 
 
+# Example usage:
+team_vs_emotions("CSK")  # Replace 'CSK' with the desired IPL team
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+team_vs_emotion_sentiment()
 
 
 def team_vs_emotion_sentiment():
@@ -238,7 +238,9 @@ def team_vs_emotion_sentiment():
 
     # Average Sentiments
     plt.bar(
-        team_average_sentiments.keys(), team_average_sentiments.values(), color="skyblue"
+        team_average_sentiments.keys(),
+        team_average_sentiments.values(),
+        color="skyblue",
     )
     plt.title("Average Sentiment Score for IPL Teams")
     plt.xlabel("Teams")
