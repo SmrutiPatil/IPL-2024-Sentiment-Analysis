@@ -6,6 +6,10 @@ import matplotlib.pyplot as plt
 
 from mappings import name_mappings
 
+
+ipl_teams = ["CSK", "DC", "GT", "KKR", "KXIP", "LSG", "MI", "PBKS", "RCB", "RR"]
+
+
 # Read the JSON data
 with open("formatted_data.json", "r") as file:
     data = json.load(file)
@@ -25,6 +29,7 @@ def save_output(my_set, filename):
 
 # Fan Loyalty Analysis
 tweet = []
+team_tweets = {team: [] for team in ipl_teams}
 player_sentiments = {}
 player_emotions = {}
 player_text = {}
@@ -33,7 +38,12 @@ for entry_id, entry_data in data.items():
     # print(entry_id)
     if entry_data is None:
         continue
-    tweet = entry_data["tweet"]
+    tweet.append(entry_data["tweet"])
+    tweet_text = entry_data["text"]
+    mentioned_teams = [team for team in ipl_teams if team in tweet_text]
+    if mentioned_teams:
+        for team in mentioned_teams:
+            team_tweets[team].append([entry_data["tweet"],tweet_text])
     if "players" not in entry_data:
         continue
     players = entry_data["players"]
@@ -45,17 +55,26 @@ for entry_id, entry_data in data.items():
             player_sentiments[common_name] = player_sentiments.get(common_name, []) + [player["sentiment"]]
             player_emotions[common_name] = player_emotions.get(common_name, []) + [player["emotion"]]
             player_text[common_name] = player_text.get(common_name, []) + [entry_data["text"]]
-            # print(player["player_name"], common_name)
-            # unique_player_names.add(player["player_name"])
-            # print(player["player_name"])
 
-# for player in unique_player_names:
-#     print(player)
-# print(player_sentiments)
-# print(player_emotions)
+# print(team_tweets["CSK"])
 
-# print(player_emotions)
+def all_emotion():
+    # Extract emotions and count their occurrences
+    emotion_counts = {}
+    for entry in tweet:
+        emotion = entry.get("emotion") 
+        if emotion is not None and emotion != "spam":
+            emotion_counts[emotion] = emotion_counts.get(emotion, 0) + 1
 
+    # Plotting the pie chart
+    labels = emotion_counts.keys()
+    sizes = emotion_counts.values()
+
+    plt.figure(figsize=(8, 8))
+    plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140)
+    plt.title('Emotions Distribution')
+    plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    plt.show()
 
 
 def player_vs_sentiment():
@@ -88,5 +107,6 @@ def player_vs_sentiment():
     plt.xticks(rotation=45, ha="right")
     plt.tight_layout()
     plt.show()
-    
+
 # player_vs_sentiment()
+
