@@ -8,6 +8,7 @@ from collections import Counter
 from mappings import name_mappings
 import spacy
 import re
+import pandas as pd
 import networkx as nx
 import seaborn as sns
 
@@ -27,12 +28,6 @@ def map_name(name):
     if name in name_mappings.keys():
         return name_mappings[name]
     return name
-
-def save_output(my_set, filename):
-    with open(filename, "w", encoding="utf-8") as file:
-        for item in my_set:
-            file.write(str(item) + "\n")
-    print(f"Set saved to {filename}")
 
 
 # Fan Loyalty Analysis
@@ -108,6 +103,7 @@ def all_emotion():
     plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140)
     plt.title('Emotions Distribution')
     plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    plt.savefig('emotion_distribution_all_teams.png')
     plt.show()
 
 
@@ -131,19 +127,32 @@ def player_vs_sentiment():
         if player[1] > 0 and len(player_sentiments[player[0]]) > 5
     ]
     sentiments = [player[1] for player in sorted_players if player[1] > 0 and len(player_sentiments[player[0]]) > 5]
-
-    # Plotting
-    plt.figure(figsize=(10, 6))
-    plt.bar(players, sentiments, color="skyblue")
-    plt.title("Fan Loyalty Analysis")
-    plt.xlabel("Players")
-    plt.ylabel("Average Sentiment Score")
-    plt.xticks(rotation=45, ha="right")
+    
+    #Plotting
+    plt.figure(figsize=(12, 8))  # Enlarging the figure size
+    plt.bar(
+        players, sentiments, color="lightblue", edgecolor="grey"
+    )  # Adjusting color and edgecolor
+    plt.title(
+        "Fan Loyalty Analysis", fontsize=16, fontweight="bold"
+    )  # Increasing title font size and making it bold
+    plt.xlabel("Players", fontsize=12)  # Adjusting label font size
+    plt.ylabel("Average Sentiment Score", fontsize=12)  # Adjusting label font size
+    plt.xticks(
+        rotation=60, ha="right", fontsize=10
+    )  # Rotating and adjusting tick labels font size
+    plt.yticks(fontsize=10)  # Adjusting y-axis tick labels font size
+    plt.grid(
+        axis="y", linestyle="--", alpha=0.7
+    )  # Adding horizontal grid lines with transparency
     plt.tight_layout()
+    plt.savefig('fan_loyalty_analysis.png')
     plt.show()
 
+# player_vs_sentiment()
+
 # word count model
-def word_count_per_team():
+def word_count_per_team(team_name, plot=True, correlation=False):
     def count_words(text):
         # Remove all non-alphanumeric characters except spaces
         text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
@@ -170,10 +179,14 @@ def word_count_per_team():
 
             # Update the team's word count
             team_word_counts[team] += word_count
+      
+    if correlation:
+        return team_word_counts      
+        
 
     # Get user input for team name
-    team_name = input("Enter team name: ")
-    if team_name in team_word_counts:
+    # team_name = input("Enter team name: ")
+    if team_name in team_word_counts and plot:
         # Get word count for the specified team
         word_count = team_word_counts[team_name]
 
@@ -188,6 +201,7 @@ def word_count_per_team():
         plt.title(f'Top 20 Words for {team_name}')  # Title includes team's name
         plt.xticks(rotation=45)  # Rotate x-axis labels for readability
         plt.tight_layout()  # Adjust layout to prevent overlap
+        plt.savefig(f'word_frequency_{team_name}.png')
 
         # Create heatmap for word frequency
         top_word_count_matrix = np.array(list(top_words.values())).reshape(1, -1)
@@ -200,11 +214,78 @@ def word_count_per_team():
         plt.tight_layout()
 
         plt.show()  # Show the plots
+        
+    elif not plot:
+        return word_count
     else:
         print("Team not found.")
 
     # Plot word frequency for the specified team
-     
+
+# word_count_per_team("CSK", plot=False)
+# Assuming top_words_team1 and top_words_team2 are dictionaries containing the word frequencies for each team
+
+
+def plot_word_frequency_heatmap(
+    team1_name, team2_name):
+    top_words_team1 = word_count_per_team(team1_name, plot=False)
+    top_words_team2 = word_count_per_team(team2_name, plot=False)
+    # Create matrices for word frequencies of both teams
+    team1_word_count_matrix = np.array(list(top_words_team1.values())).reshape(1, -1)
+    team2_word_count_matrix = np.array(list(top_words_team2.values())).reshape(1, -1)
+
+    # Create a combined matrix for both teams
+    combined_matrix = np.vstack((team1_word_count_matrix, team2_word_count_matrix))
+
+    # Plot the heatmap
+    plt.figure(figsize=(10, 6))
+    sns.heatmap(
+        combined_matrix,
+        cmap="Blues",
+        annot=True,
+        fmt="g",
+        xticklabels=list(top_words_team1.keys()),
+        yticklabels=[team1_name, team2_name],
+    )
+    plt.title(f"Word Frequency Heatmap for {team1_name} vs {team2_name}")
+    plt.xlabel("Words")
+    plt.ylabel("Team")
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+    plt.show()
+
+
+# Example usage:
+# Assuming top_words_csk and top_words_mi are dictionaries containing word frequencies for CSK and MI teams respectively
+# plot_word_frequency_heatmap("CSK", "LSG")
+
+
+# Assuming top_words_dict is a dictionary containing the word frequencies for all teams
+def compute_correlation_matrix_all_teams():
+    top_words_dict = word_count_per_team("CSK", correlation=True)
+    # Convert word frequencies dictionary to DataFrame
+    df = pd.DataFrame(top_words_dict)
+
+    # Compute the correlation matrix
+    correlation_matrix = df.corr()
+
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(
+        correlation_matrix, annot=True, cmap="coolwarm", fmt=".2f", linewidths=0.5
+    )
+    plt.title("Correlation Matrix of Word Frequencies between All Teams")
+    plt.xlabel("Teams")
+    plt.ylabel("Teams")
+    plt.xticks(rotation=45)
+    plt.yticks(rotation=0)
+    plt.tight_layout()
+    plt.savefig('correlation_matrix_all_teams.png')
+    plt.show()
+
+
+# Example usage:
+# Assuming top_words_dict is a dictionary where keys are team names and values are dictionaries containing word frequencies for each team
+compute_correlation_matrix_all_teams()
 
 
 def team_vs_emotion_sentiment():
@@ -223,6 +304,7 @@ def team_vs_emotion_sentiment():
     plt.title("Average Sentiment Score for IPL Teams")
     plt.xlabel("Teams")
     plt.ylabel("Average Sentiment Score")
+    plt.savefig('average_sentiment_score.png')
     plt.show()
 
 
@@ -235,9 +317,8 @@ def team_vs_emotions(team):
     plt.pie(team_emotion_counts, labels=emotions, autopct="%1.1f%%", startangle=140)
     plt.title(f"Emotions Distribution for Team {team}")
     plt.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
+    plt.savefig(f"emotions_distribution_{team}.png")
     plt.show()
-
-
 
 
 def team_vs_emotion_sentiment():
@@ -298,12 +379,11 @@ def team_network_graph():
     plt.show()
 
 
-
-def player_vs_team_heatmap():
+def player_vs_team_heatmap(team_name):
     # Initialize dictionary to store data
     player_counts = Counter()
     unique_player_names = set()
-    team_name = input("Enter the team name: ")
+    # team_name = input("Enter the team name: ")
     # Extract player names and count occurrences for the specified team
     for entry_id, entry_data in data.items():
         if entry_data is None:
@@ -332,9 +412,3 @@ def player_vs_team_heatmap():
     plt.xticks(rotation=45, ha='right')
     plt.tight_layout()
     plt.show()
-
-# Ask user to input a team name
-
-
-# Generate heatmap for the specified team
-word_count_per_team()
