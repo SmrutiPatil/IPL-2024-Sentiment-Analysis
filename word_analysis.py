@@ -53,6 +53,7 @@ if player_name in player_word_counts:
     plt.title(f'Top 20 Words for {player_name}')  # Title includes player's name
     plt.xticks(rotation=45)
     plt.tight_layout()  # Adjust layout to prevent overlap
+    plt.savefig('bar.png')
     plt.show()    # Rotate x-axis labels for readability
     # Show the plot
     
@@ -63,6 +64,7 @@ if player_name in player_word_counts:
     plt.title(f'Scatter Plot of Word Frequencies for {player_name}')  # Title includes player's name
 
     plt.tight_layout()  # Adjust layout to prevent overlap
+    plt.savefig('scatter.png')
     plt.show() 
     # Plot heatmap for the top 20 words
     word_count_list = [word_count[word] for word in top_words]
@@ -75,6 +77,9 @@ if player_name in player_word_counts:
     plt.ylabel('Player')
     plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels for readability
     plt.tight_layout()  # Adjust layout to prevent overlap
+    plt.savefig('heatmap.png')
     plt.show()  # Show the heatmap
 else:
     print("Player not found.")
+    
+count_words(player_text['MS Dhoni'])

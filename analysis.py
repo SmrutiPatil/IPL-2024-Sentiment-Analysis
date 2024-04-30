@@ -11,6 +11,7 @@ import re
 import pandas as pd
 import networkx as nx
 import seaborn as sns
+from wordcloud import WordCloud
 
 
 nlp = spacy.load("en_core_web_sm")
@@ -20,7 +21,7 @@ ipl_teams = ["CSK", "DC", "GT", "KKR", "KXIP", "LSG", "MI", "PBKS", "RCB", "RR"]
 
 
 # Read the JSON data
-with open("formatted_data.json", "r") as file:
+with open("formatted_data_updated.json", "r") as file:
     data = json.load(file)
 
 
@@ -76,7 +77,7 @@ emotions = [
 team_sentiments = {team: [] for team in ipl_teams}
 team_emotions = {team: {emotion: 0 for emotion in emotions} for team in ipl_teams}
 
-# Iterate through team tweets and accumulate sentiments and emotions
+
 for team, tweets in team_tweets.items():
     for tweet_data in tweets:
         tweet_text = tweet_data[1]
@@ -88,7 +89,6 @@ for team, tweets in team_tweets.items():
             team_emotions[team][emotion] += 1
 
 def all_emotion():
-    # Extract emotions and count their occurrences
     emotion_counts = {}
     for entry in tweet:
         emotion = entry.get("emotion") 
@@ -99,11 +99,14 @@ def all_emotion():
     labels = emotion_counts.keys()
     sizes = emotion_counts.values()
 
-    plt.figure(figsize=(8, 8))
-    plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140)
-    plt.title('Emotions Distribution')
-    plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-    plt.savefig('emotion_distribution_all_teams.png')
+    plt.figure(figsize=(10, 8))  # Increase the figure size
+    plt.pie(sizes, labels=labels, autopct="%1.1f%%", startangle=140)
+    plt.title("Emotions Distribution", fontsize=16)
+    plt.axis("equal")
+    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), fontsize=12)
+
+    plt.tight_layout() 
+    plt.savefig("emotion_distribution_all_teams.png")
     plt.show()
 
 
@@ -111,16 +114,14 @@ def player_vs_sentiment():
     for player, scores in player_sentiments.items():
         player_sentiments[player] = [int(score) for score in scores if score is not None]
 
-    # Calculate the average sentiment score for each player
+    
     average_sentiments = {}
     for player, sentiments in player_sentiments.items():
         print(player, sentiments)
         average_sentiments[player] = sum(sentiments)/ len(sentiments)
 
-    # Sort players by their average sentiment score
     sorted_players = sorted(average_sentiments.items(), key=lambda x: x[1], reverse=True)
 
-    # Extract player names and their corresponding average sentiment scores
     players = [
         player[0]
         for player in sorted_players
@@ -129,27 +130,26 @@ def player_vs_sentiment():
     sentiments = [player[1] for player in sorted_players if player[1] > 0 and len(player_sentiments[player[0]]) > 5]
     
     #Plotting
-    plt.figure(figsize=(12, 8))  # Enlarging the figure size
+    plt.figure(figsize=(12, 8)) 
     plt.bar(
         players, sentiments, color="lightblue", edgecolor="grey"
-    )  # Adjusting color and edgecolor
+    )  
     plt.title(
         "Fan Loyalty Analysis", fontsize=16, fontweight="bold"
-    )  # Increasing title font size and making it bold
-    plt.xlabel("Players", fontsize=12)  # Adjusting label font size
-    plt.ylabel("Average Sentiment Score", fontsize=12)  # Adjusting label font size
+    )  
+    plt.xlabel("Players", fontsize=12) 
+    plt.ylabel("Average Sentiment Score", fontsize=12)  
     plt.xticks(
         rotation=60, ha="right", fontsize=10
-    )  # Rotating and adjusting tick labels font size
-    plt.yticks(fontsize=10)  # Adjusting y-axis tick labels font size
+    )  
+    plt.yticks(fontsize=10)  
     plt.grid(
         axis="y", linestyle="--", alpha=0.7
-    )  # Adding horizontal grid lines with transparency
+    ) 
     plt.tight_layout()
     plt.savefig('fan_loyalty_analysis.png')
     plt.show()
 
-# player_vs_sentiment()
 
 # word count model
 def word_count_per_team(team_name, plot=True, correlation=False):
@@ -157,50 +157,42 @@ def word_count_per_team(team_name, plot=True, correlation=False):
         # Remove all non-alphanumeric characters except spaces
         text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
 
-        # Tokenize the text into words and filter out stopwords
+        # Tokenize 
         doc = nlp(text)
         words = [token.text.lower() for token in doc if not token.is_stop and token.text.isalnum()]
 
-        # Count the occurrences of each word
+        
         word_counts = Counter(words)
 
         return word_counts
 
     team_word_counts = {team: Counter() for team in ipl_teams}
 
-    # Iterate over each team and their associated tweets
+   
     for team, tweets in team_tweets.items():
-        # Iterate over each tweet and its text
+       
         for tweet_info in tweets:
-            tweet_text = tweet_info[1]  # Extract tweet text from the second index of the tweet_info list
-
-            # Tokenize the text into words and count the occurrences of each word
+            tweet_text = tweet_info[1] 
             word_count = count_words(tweet_text)
 
-            # Update the team's word count
             team_word_counts[team] += word_count
       
     if correlation:
         return team_word_counts      
         
 
-    # Get user input for team name
-    # team_name = input("Enter team name: ")
     if team_name in team_word_counts and plot:
-        # Get word count for the specified team
         word_count = team_word_counts[team_name]
-
-        # Select top 20 words with highest frequency count
         top_words = dict(word_count.most_common(20))
 
         # Plot the bar plot for the specified team
         plt.figure(figsize=(10, 6))
-        plt.bar(top_words.keys(), top_words.values())  # Plot the bar plot
+        plt.bar(top_words.keys(), top_words.values()) 
         plt.xlabel('Word')
         plt.ylabel('Count')
-        plt.title(f'Top 20 Words for {team_name}')  # Title includes team's name
-        plt.xticks(rotation=45)  # Rotate x-axis labels for readability
-        plt.tight_layout()  # Adjust layout to prevent overlap
+        plt.title(f'Top 20 Words for {team_name}')
+        plt.xticks(rotation=45) 
+        plt.tight_layout() 
         plt.savefig(f'word_frequency_{team_name}.png')
 
         # Create heatmap for word frequency
@@ -213,28 +205,22 @@ def word_count_per_team(team_name, plot=True, correlation=False):
         plt.xticks(rotation=45, ha='right')
         plt.tight_layout()
 
-        plt.show()  # Show the plots
+        plt.show()  
         
     elif not plot:
         return word_count
     else:
         print("Team not found.")
 
-    # Plot word frequency for the specified team
-
-# word_count_per_team("CSK", plot=False)
-# Assuming top_words_team1 and top_words_team2 are dictionaries containing the word frequencies for each team
-
 
 def plot_word_frequency_heatmap(
     team1_name, team2_name):
     top_words_team1 = word_count_per_team(team1_name, plot=False)
     top_words_team2 = word_count_per_team(team2_name, plot=False)
-    # Create matrices for word frequencies of both teams
+    
     team1_word_count_matrix = np.array(list(top_words_team1.values())).reshape(1, -1)
     team2_word_count_matrix = np.array(list(top_words_team2.values())).reshape(1, -1)
-
-    # Create a combined matrix for both teams
+    
     combined_matrix = np.vstack((team1_word_count_matrix, team2_word_count_matrix))
 
     # Plot the heatmap
@@ -255,18 +241,10 @@ def plot_word_frequency_heatmap(
     plt.show()
 
 
-# Example usage:
-# Assuming top_words_csk and top_words_mi are dictionaries containing word frequencies for CSK and MI teams respectively
-# plot_word_frequency_heatmap("CSK", "LSG")
-
-
-# Assuming top_words_dict is a dictionary containing the word frequencies for all teams
 def compute_correlation_matrix_all_teams():
     top_words_dict = word_count_per_team("CSK", correlation=True)
-    # Convert word frequencies dictionary to DataFrame
     df = pd.DataFrame(top_words_dict)
 
-    # Compute the correlation matrix
     correlation_matrix = df.corr()
 
     plt.figure(figsize=(10, 8))
@@ -283,14 +261,8 @@ def compute_correlation_matrix_all_teams():
     plt.show()
 
 
-# Example usage:
-# Assuming top_words_dict is a dictionary where keys are team names and values are dictionaries containing word frequencies for each team
-compute_correlation_matrix_all_teams()
-
-
 def team_vs_emotion_sentiment():
 
-    # Calculate average sentiment score for each team
     team_average_sentiments = {
         team: np.mean(sentiments) for team, sentiments in team_sentiments.items()
     }
@@ -309,7 +281,7 @@ def team_vs_emotion_sentiment():
 
 
 def team_vs_emotions(team):
-    # Extract emotion counts for the specified team
+    
     team_emotion_counts = [team_emotions[team][emotion] for emotion in emotions]
 
     # Plotting Pie Chart for Emotions Distribution
@@ -337,27 +309,22 @@ def team_vs_emotion_sentiment():
     plt.title("Average Sentiment Score for IPL Teams")
     plt.xlabel("Teams")
     plt.ylabel("Average Sentiment Score")
+    plt.savefig('average_sentiment_score.png')
     plt.show()
 
 def team_network_graph():
-    # Create a directed graph
     G = nx.DiGraph()
 
-    # Filter out None values from unique_player_names
     valid_player_names = {name for name in unique_player_names if name}
 
-    # Iterate over each team's tweets
     for team, tweets in team_tweets.items():
-        # Count occurrences of each player in the team's tweets
         player_counts = Counter()
         for tweet_data in tweets:
             tweet_text = tweet_data[1]
-            # Extract player names from tweet text and count occurrences
             for player in valid_player_names:
                 if player in tweet_text:
                     player_counts[player] += 1
         
-        # Find the top 5 players with the highest counts for this team
         top_players = [player for player, _ in player_counts.most_common(4)]
         
         # Add nodes for the top 5 players for this team
@@ -376,15 +343,14 @@ def team_network_graph():
 
     nx.draw(G, pos, with_labels=True, node_size=1000, font_size=12, font_weight='bold', arrowsize=20, node_color=node_colors)
     plt.title('Network Graph Between Top Players and Teams')
+    plt.savefig('network_graph.png')
     plt.show()
 
 
 def player_vs_team_heatmap(team_name):
-    # Initialize dictionary to store data
+    
     player_counts = Counter()
     unique_player_names = set()
-    # team_name = input("Enter the team name: ")
-    # Extract player names and count occurrences for the specified team
     for entry_id, entry_data in data.items():
         if entry_data is None:
             continue
@@ -402,7 +368,7 @@ def player_vs_team_heatmap(team_name):
     top_players = [player for player, count in player_counts.most_common(20)]
     top_player_counts = [player_counts[player] for player in top_players]
     player_counts_matrix = np.array(top_player_counts).reshape(1, -1)
-    
+
     # Plot heatmap
     plt.figure(figsize=(10, 6))
     sns.heatmap(player_counts_matrix, cmap="Blues", annot=True, fmt='g', xticklabels=top_players, yticklabels=False)
@@ -411,4 +377,60 @@ def player_vs_team_heatmap(team_name):
     plt.ylabel('Team')
     plt.xticks(rotation=45, ha='right')
     plt.tight_layout()
+    plt.savefig(f'player_team_heatmap_{team_name}.png')
     plt.show()
+
+
+def plot_top_n_words(n=10):
+    top_words_dict = word_count_per_team("CSK", correlation=True)
+    plt.figure(figsize=(12, 8))
+    for team, word_freq in top_words_dict.items():
+        top_n_words = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:n]
+        words, frequencies = zip(*top_n_words)
+        plt.bar(words, frequencies, label=team)
+    plt.title(f"Top {n} Words for Each Team")
+    plt.xlabel("Words")
+    plt.ylabel("Frequency")
+    plt.xticks(rotation=45, ha="right")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_word_cloud(team_name):
+    word_freq_dict = word_count_per_team(team_name, plot=False)
+    wordcloud = WordCloud(
+        width=800, height=400, background_color="white"
+    ).generate_from_frequencies(word_freq_dict)
+    plt.figure(figsize=(10, 6))
+    plt.imshow(wordcloud, interpolation="bilinear")
+    plt.title(f"Word Cloud for Team {team_name}")
+    plt.axis("off")
+    plt.show()
+
+
+def plot_box_plot(team_name):
+    word_frequencies = word_count_per_team(team_name, correlation=True, plot=False)
+    plt.figure(figsize=(10, 6))
+    # Filter out word frequencies greater than 5
+    filtered_data = [
+        [freq for freq in counter.values() if freq > 50]
+        for counter in word_frequencies.values()
+    ]
+
+    # Remove empty lists (teams with no frequencies greater than 5)
+    filtered_data = [data for data in filtered_data if data]
+    plt.boxplot(filtered_data)
+    plt.xticks(
+        range(1, len(word_frequencies) + 1),
+        word_frequencies.keys(),
+        rotation=45,
+        ha="right",
+    )
+    plt.title("Box Plot of Word Frequencies for Each Team")
+    plt.xlabel("Team")
+    plt.ylabel("Word Frequency")
+    plt.tight_layout()
+    plt.show()
+
+
