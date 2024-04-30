@@ -394,6 +394,7 @@ def plot_top_n_words(n=10):
     plt.xticks(rotation=45, ha="right")
     plt.legend()
     plt.tight_layout()
+    plt.savefig('top_n_words.png')
     plt.show()
 
 
@@ -406,6 +407,7 @@ def plot_word_cloud(team_name):
     plt.imshow(wordcloud, interpolation="bilinear")
     plt.title(f"Word Cloud for Team {team_name}")
     plt.axis("off")
+    plt.savefig(f'word_cloud_{team_name}.png')
     plt.show()
 
 
@@ -431,6 +433,26 @@ def plot_box_plot(team_name):
     plt.xlabel("Team")
     plt.ylabel("Word Frequency")
     plt.tight_layout()
+    plt.savefig('box_plot_word_frequencies.png')
     plt.show()
+    
+    
+def main():
+    all_emotion()
+    player_vs_sentiment()
+    team_vs_emotion_sentiment()
+    team_network_graph()
+    # compute_correlation_matrix_all_teams()
+    # for team in ipl_teams:
+    #     team_vs_emotions(team)
+    #     player_vs_team_heatmap(team)
+    #     plot_top_n_words()
+    #     plot_word_cloud(team)
+    #     plot_box_plot(team)
+        # plot_word_frequency_heatmap("CSK", "MI")
+
+if __name__ == "__main__":
+    main()
+
 
 
